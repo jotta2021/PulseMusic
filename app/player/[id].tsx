@@ -1,5 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, Image,  } from "react-native";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import {
+  View,
+  Text,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from "react-native";
 import Slider from "@react-native-community/slider";
 import { useLocalSearchParams } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
@@ -10,6 +18,8 @@ import { useNavigation } from "expo-router";
 import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { contextAuth } from "@/context";
+import { useToast } from "react-native-toast-notifications";
 
 interface Track {
   title: string;
@@ -19,7 +29,7 @@ interface Track {
   };
   album: {
     cover_big: string;
-    tracklist:string;
+    tracklist: string;
   };
 }
 
@@ -33,18 +43,20 @@ export default function PlayerMusic() {
   const [repeat, setRepeat] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-
+  const [trackId, setTrackId] = useState(0);
+  const authContext = useContext(contextAuth);
+  const data = authContext?.data || [];
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  const toast = useToast();
   async function getTrack() {
-    await axios.get(`${api}/track/${id}`).then((res) => {
-      setTrack(res.data);
-      console.log("dados da track", res.data);
-    });
+    const searchTrack = data.find((item) => item.id === Number(id));
+    console.log(searchTrack);
+    setTrack(searchTrack);
   }
 
   useEffect(() => {
     getTrack();
+    setTrackId(Number(id));
   }, [id]);
 
   useEffect(() => {
@@ -99,9 +111,10 @@ export default function PlayerMusic() {
           await sound.setPositionAsync(0);
           if (repeat) {
             await sound.playAsync();
-            setPlay(true)
+            setPlay(true);
           } else {
             setPlay(false);
+            SetNextTrack();
           }
         }
       }
@@ -115,6 +128,10 @@ export default function PlayerMusic() {
         setPlay(false);
         console.log("Reprodução de áudio pausada.");
       } catch (error) {
+        getTrack();
+        setPlay(false);
+        setPosition(0);
+        setDuration(0);
         console.error("Erro ao pausar a reprodução de áudio:", error);
       }
     } else {
@@ -130,6 +147,11 @@ export default function PlayerMusic() {
         console.log("Reprodução de áudio retomada.");
       } catch (error) {
         console.error("Erro ao retomar a reprodução de áudio:", error);
+        setPlay(false);
+        setPosition(0);
+        setDuration(0);
+        setAudio(null);
+        getTrack();
       }
     } else {
       console.warn("Não há áudio para retomar.");
@@ -146,17 +168,24 @@ export default function PlayerMusic() {
     }
   };
 
-  // função para pular para a proxima musica
-  const [newMusics,setNewMusic] =useState([])
-  async function NextMusic(){
-    const next=track?.album.tracklist
-    await axios.get(next)
-    .then((res)=> {
-       console.log(res.data.data)
-        setNewMusic(res.data)
-    })
-  }
+  //salva a proxima track da lista na state
+  function SetNextTrack() {
+    //pega o id da proxima musica
 
+    const trackIndex = data.findIndex((item) => item.id === trackId);
+    const nextTrackIndex = Number(trackIndex) + 1;
+
+    if (nextTrackIndex < data.length) {
+      setTrack(data[nextTrackIndex]);
+      setTrackId(data[nextTrackIndex].id);
+      console.log("trackId", trackId, "proxima track", nextTrackIndex);
+      setPosition(0);
+
+      setDuration(0);
+    } else {
+      Alert.alert("Não há mais músicas");
+    }
+  }
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -171,21 +200,42 @@ export default function PlayerMusic() {
 
         <View style={styles.contentImage}>
           {track && track.album && track.album.cover_big && (
-            <Image source={{ uri: track.album.cover_big }} style={styles.image} />
+            <Image
+              source={{ uri: track.album.cover_big }}
+              style={styles.image}
+            />
           )}
         </View>
 
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 20, height: 80 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginTop: 20,
+            height: 80,
+          }}
+        >
           <View style={styles.contentInfo}>
             <Text style={styles.title}> {track && Substring(track.title)}</Text>
-            <Text style={styles.subtitle}> {track && track.artist && track.artist.name}</Text>
+            <Text style={styles.subtitle}>
+              {" "}
+              {track && track.artist && track.artist.name}
+            </Text>
           </View>
           {like ? (
-            <TouchableOpacity onPress={() => setLike(false)}>
+            <TouchableOpacity onPress={() => {setLike(false)
+              toast.show("Música removida dos meus favoritos")
+
+            }}>
               <Entypo name="heart" color="red" size={30} />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={() => setLike(true)}>
+            <TouchableOpacity
+              onPress={() => {
+                setLike(true);
+                toast.show("Música adicionada aos meus favoritos");
+              }}
+            >
               <Entypo name="heart-outlined" color="white" size={30} />
             </TouchableOpacity>
           )}
@@ -224,9 +274,7 @@ export default function PlayerMusic() {
               <Ionicons name="play-circle" size={80} color="#1E90FF" />
             )}
           </TouchableOpacity>
-          <TouchableOpacity
-          onPress={NextMusic}
-          >
+          <TouchableOpacity onPress={() => SetNextTrack()}>
             <AntDesign name="stepforward" size={30} color="white" />
           </TouchableOpacity>
           <TouchableOpacity
@@ -236,7 +284,11 @@ export default function PlayerMusic() {
             {repeat ? (
               <MaterialCommunityIcons name="repeat" size={30} color="white" />
             ) : (
-              <MaterialCommunityIcons name="repeat-off" size={30} color="white" />
+              <MaterialCommunityIcons
+                name="repeat-off"
+                size={30}
+                color="white"
+              />
             )}
           </TouchableOpacity>
         </View>
@@ -287,15 +339,15 @@ const styles = StyleSheet.create({
     width: 280,
   },
   slider: {
-    width: '100%',
+    width: "100%",
     height: 40,
   },
   timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   timeText: {
-    color: 'white',
+    color: "white",
   },
   buttonsGroup: {
     flexDirection: "row",

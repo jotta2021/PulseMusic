@@ -8,23 +8,26 @@ import {
   ActivityIndicator,
   FlatList,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Icon from "@expo/vector-icons/Ionicons";
 import api from "@/api";
 import axios from "axios";
 import CardComponent from "@/components/CardComponents";
 import Close from "@expo/vector-icons/AntDesign";
+import { contextAuth } from "@/context";
 
 export default function Search() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState([]);
+  const authContext = useContext(contextAuth);
+  const data = authContext?.data || [];
+  const setData = authContext?.setData || (() => {});
 
   async function SearchMusic() {
     setLoading(true);
-    console.log(`${api}search?q=track:'${search}'&index=0&limit=2&output=json`);
+   
     await axios
-      .get(`${api}search?q=track:'${search}'&index=0&limit=10&output=json`)
+      .get(`${api}search?q=${search}&index=0&limit=30&output=json`)
       .then((res) => {
         const dados = res.data;
         setData(dados.data);
@@ -51,6 +54,7 @@ export default function Search() {
         <View style={styles.containerInput}>
           <TextInput
             placeholder="Procurar músicas, artistas ou álbuns"
+            placeholderTextColor={'black'}
             style={styles.input}
             value={search}
             onChangeText={(text) => setSearch(text)}
@@ -76,7 +80,8 @@ export default function Search() {
           ) : (
             <FlatList
               data={data}
-              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              keyExtractor={(item,index) =>index.toString()}
               renderItem={({ item }) => <CardComponent data={item} />}
               contentContainerStyle={styles.listContent}
             />

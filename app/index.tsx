@@ -1,4 +1,4 @@
-import { Link, useNavigation } from "expo-router";
+import { Link, router, useNavigation } from "expo-router";
 import {
   Text,
   View,
@@ -7,18 +7,27 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Icon from "@expo/vector-icons/AntDesign";
+import { contextAuth } from "@/context";
 
 
 export default function Index() {
-  const navigation = useNavigation();
+  
 
   const [user, setUser] = useState("");
 
   return (
-    <SafeAreaView style={styles.container}>
+    <KeyboardAvoidingView behavior='padding' style={styles.container}>
+
+<TouchableWithoutFeedback onPress={()=> Keyboard.dismiss()}>
+
+
+    <SafeAreaView style={{alignItems:'center'}} >
         <Image
          src="https://i.ibb.co/6NY5qxP/pulse-azul.png"
           alt="logo"
@@ -51,25 +60,21 @@ export default function Index() {
 
           
             <TouchableOpacity style={styles.button}
-        onPress={()=> navigation.navigate('(tabs)')}
+        onPress={()=> router.push('home')}
             >
               <Text style={{ color: "white", fontSize: 16 }}>Login</Text>
             </TouchableOpacity>
     
 
-          <Text style={styles.text}>Ou entre com </Text>
+        
 
-          <View style={styles.card}>
-            <Icon name="google" size={30} color={"white"} />
-          </View>
-
-          <View>
-            <Text>Google</Text>
-          </View>
+        
         </View>
       </View>
  
     </SafeAreaView>
+    </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -78,6 +83,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     backgroundColor: "black",
+    justifyContent:'center'
   },
   header: {
     backgroundColor: "black",
@@ -99,6 +105,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 90,
     width: "100%",
     backgroundColor: "black",
+
   },
   contentInputs: {
     marginTop: 30,
@@ -113,6 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#9999",
     color: "white",
     borderWidth: 0,
+    paddingHorizontal:10
   },
   text: {
     color: "white",

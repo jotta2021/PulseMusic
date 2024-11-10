@@ -8,18 +8,19 @@ export default function Layout(){
             tabBarActiveBackgroundColor:'black',
             tabBarInactiveBackgroundColor:'black',
             tabBarInactiveTintColor:'white',
-            tabBarActiveTintColor:'white'
+            tabBarActiveTintColor:'white',
+            
             
         }}
         >
             <Tabs.Screen name="index" options={{title:'Home',headerShown:false,
 tabBarIcon:({focused,size,color})=> {
     if(focused){
-        return <Icon  name='home' size={size} color={'#1E90FF'}
+        return <Icon  name='home' size={size} color={'white'}
         
         /> 
     }
-    return  <Icon  name='home-outline' size={size} color={'#1E90FF'}/>
+    return  <Icon  name='home-outline' size={size} color={'white'}/>
 }
 ,
 
@@ -29,7 +30,7 @@ tabBarIcon:({focused,size,color})=> {
             <Tabs.Screen name="search/search" options={{title:'Procurar',headerShown:false,
 tabBarIcon:({focused,size,color})=> {
 
-    return <Icon  name='search' size={size} color={'#1E90FF'}
+    return <Icon  name='search' size={size} color={'white'}
     
     />
 
